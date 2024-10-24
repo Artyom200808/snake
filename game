@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Современная Змейка</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            color: #004d40;
+        }
+        canvas {
+            border: 4px solid #00796b;
+            background-color: #fafafa;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+        .title {
+            font-size: 3em;
+            font-weight: bold;
+            color: #00796b;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .difficulty-select, .color-select, .background-select {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            font-size: 1.2em;
+        }
+        label {
+            margin-right: 10px;
+            color: #004d40;
+        }
+        input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        input[type="color"]:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        .button-container {
+            margin: 20px;
+        }
+        #startButton, #shopButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.3s;
+            margin: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        #startButton:hover, #shopButton:hover {
+            background-color: #004d40;
+            transform: translateY(-2px);
+        }
+        .currency, .hearts {
+            font-size: 1.5em;
+            color: #ffd600;
+            position: absolute;
+            top: 20px;
+            z-index: 10;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .currency {
+            right: 20px;
+        }
+        .hearts {
+            left: 20px;
+            color: red;
+        }
+        .state-container {
+            position: absolute;
+            top: 80px; /* Изменено для перемещения ниже */
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            font-size: 1.2em;
+        }
+        .shop {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .shop-item {
+            margin: 15px 0;
+            font-size: 1.3em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 121, 107, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s, transform 0.2s;
+        }
+        .shop-item:hover {
+            background: rgba(0, 121, 107, 0.2);
+            transform: translateY(-2px);
+        }
+        .shop-button {
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .shop-button:hover {
+            background-color: #004d40;
+            transform: scale(1.05);
+        }
+        .game-over-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            z-index: 20;
+        }
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #ff1744;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">Современная Змейка</div>
+    <div class="difficulty-select">
+        <label for="difficulty">Выберите сложность:</label>
+        <select id="difficulty">
+            <option value="1">Легкий</option>
+            <option value="2">Средний</option>
+            <option value="3">Сложный</option>
+        </select>
+    </div>
+    <div class="color-select">
+        <label for="snakeColor">Цвет змеи:</label>
+        <input type="color" id="snakeColor" value="#008000" onchange="changeSnakeColor(event)">
+    </div>
+    <div class="background-select">
+        <label for="backgroundColor">Цвет фона:</label>
+        <input type="color" id="backgroundColor" value="#fafafa" onchange="changeBackgroundColor(event)">
+    </div>
+    <div class="button-container">
+        <button id="startButton" onclick="startGame()">Начать игру</button>
+        <button id="shopButton" onclick="openShop()">Магазин</button>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400" style="display:none;"></canvas>
+    <div class="currency" id="currencyDisplay">Валюта: 0</div>
+
+    <div class="state-container" id="gameState">
+        <strong>Состояние игры:</strong><br>
+        Счет: <span id="scoreDisplay">0</span><br>
+        Длина змейки: <span id="snakeLength">1</span><br>
+        Режим тени: <span id="ghostModeDisplay">Нет</span><br>
+    </div>
+
+    <div class="hearts" id="heartsDisplay">❤️</div>
+
+    <div class="shop" id="shop">
+        <h2>Магазин</h2>
+        <div class="shop-item">
+            <span>Дополнительная жизнь: 50 валюты</span>
+            <button class="shop-button" onclick="buyExtraLife()">Купить</button>
+        </div>
+        <div class="shop-item">
+            <span>Улучшение скорости: 100 валюты</span>
+            <button class="shop-button" onclick="buySpeedUpgrade()">Купить</button>
+        </div>
+        <div class="shop-item">
+            <span>Часть хвоста: 100 валюты</span>
+            <button class="shop-button" onclick="buyTailPiece()">Купить</button>
+        </div>
+        <button class="shop-button" onclick="closeShop()">Закрыть магазин</button>
+    </div>
+
+    <div class="game-over-message" id="gameOverMessage">
+        <button class="close-button" onclick="closeGameOver()">✖</button>
+        <h2>Вы проиграли!</h2>
+        <button onclick="startGame()">Попробовать снова</button>
+    </div>
+
+    <audio id="eatSound" src="eat.mp3" preload="auto"></audio>
+    <audio id="gameOverSound" src="gameOver.mp3" preload="auto"></audio>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const currencyDisplay = document.getElementById('currencyDisplay');
+        const heartsDisplay = document.getElementById('heartsDisplay');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        const shop = document.getElementById('shop');
+        const ghostModeDisplay = document.getElementById('ghostModeDisplay');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const snakeLengthDisplay = document.getElementById('snakeLength');
+
+        let box = 20;
+        let snake, direction, food, game, speed, score, gameOver, ghostMode;
+        let currency = 0;
+        let lives = 1;
+        let canChangeDirection = true;
+        let snakeColor = '#008000';
+        let tailPieces = 0;
+
+        function startGame() {
+            const difficulty = document.getElementById('difficulty').value;
+            speed = difficulty === '1' ? 200 : (difficulty === '2' ? 150 : 100);
+            snake = [];
+            for (let i = 0; i < 1 + tailPieces; i++) {
+                snake.push({ x: box * (5 - i), y: box * 5 });
+            }
+            direction = 'RIGHT';
+            food = generateFood();
+            score = 0;
+            gameOver = false;
+            ghostMode = false;
+            canChangeDirection = true;
+
+            canvas.style.display = 'block';
+            shop.style.display = 'none';
+            gameOverMessage.style.display = 'none';
+            game = setInterval(draw, speed);
+            updateHearts();
+            currencyDisplay.innerText = `Валюта: ${currency}`;
+            snakeLengthDisplay.innerText = snake.length;
+            document.getElementById('shopButton').style.display = 'none';
+        }
+
+        function openShop() {
+            shop.style.display = 'block';
+            document.getElementById('startButton').style.display = 'none';
+        }
+
+        function closeShop() {
+            shop.style.display = 'none';
+            document.getElementById('startButton').style.display = 'block';
+        }
+
+        function changeSnakeColor(event) {
+            snakeColor = event.target.value;
+        }
+
+        function changeBackgroundColor(event) {
+            canvas.style.backgroundColor = event.target.value;
+        }
+
+        function buyExtraLife() {
+            if (currency >= 50) {
+                currency -= 50;
+                lives++;
+                currencyDisplay.innerText = `Валюта: ${currency}`;
+                updateHearts();
+                alert('Вы купили дополнительную жизнь!');
+            } else {
+                alert('Недостаточно валюты для покупки жизни.');
+            }
+        }
+
+        function buySpeedUpgrade() {
+            if (currency >= 100) {
+                currency -= 100;
+                speed *= 0.9;
+                clearInterval(game);
+                game = setInterval(draw, speed);
+                currencyDisplay.innerText = `Валюта: ${currency}`;
+                alert('Вы купили улучшение скорости!');
+            } else {
+                alert('Недостаточно валюты для покупки улучшения скорости.');
+            }
+        }
+
+        function buyTailPiece() {
+            if (currency >= 100) {
+                currency -= 100;
+                tailPieces++;
+                currencyDisplay.innerText = `Валюта: ${currency}`;
+                alert('Вы купили часть хвоста! Теперь ваша змейка начнет с длиной ' + (1 + tailPieces) + ' блока(ов).');
+            } else {
+                alert('Недостаточно валюты для покупки части хвоста.');
+            }
+        }
+
+        function generateFood() {
+            const isSpecialFood = Math.random() < 0.1;
+            return {
+                x: Math.floor(Math.random() * (canvas.width / box)) * box,
+                y: Math.floor(Math.random() * (canvas.height / box)) * box,
+                color: isSpecialFood ? 'gold' : 'green',
+                type: isSpecialFood ? 'shadow' : 'normal'
+            };
+        }
+
+        function draw() {
+            if (gameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = food.color;
+            ctx.beginPath();
+            ctx.arc(food.x + box / 2, food.y + box / 2, box / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i === 0 && !ghostMode) ? snakeColor : 'lightgreen';
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            const head = { x: snake[0].x, y: snake[0].y };
+            if (direction === 'LEFT') head.x -= box;
+            if (direction === 'UP') head.y -= box;
+            if (direction === 'RIGHT') head.x += box;
+            if (direction === 'DOWN') head.y += box;
+
+            if (!ghostMode && (head.x < 0 || head.y < 0 || head.x >= canvas.width || head.y >= canvas.height || collision(head, snake))) {
+                if (lives > 1) {
+                    lives--;
+                    updateHearts();
+                    activateGhostMode();
+                } else {
+                    handleGameOver();
+                }
+            } else {
+                snake.unshift(head);
+                if (head.x === food.x && head.y === food.y) {
+                    document.getElementById('eatSound').play();
+                    score += 10;
+                    currency += getCurrencyReward();
+                    currencyDisplay.innerText = `Валюта: ${currency}`;
+                    scoreDisplay.innerText = score;
+                    food = generateFood();
+                    if (food.type === 'shadow') {
+                        activateGhostMode();
+                    }
+                } else {
+                    snake.pop();
+                }
+            }
+
+            snakeLengthDisplay.innerText = snake.length;
+        }
+
+        function getCurrencyReward() {
+            const difficulty = document.getElementById('difficulty').value;
+            switch (difficulty) {
+                case '1': return 5;
+                case '2': return 10;
+                case '3': return 15;
+                default: return 10;
+            }
+        }
+
+        function activateGhostMode() {
+            ghostMode = true;
+            ghostModeDisplay.innerText = "Да";
+            setTimeout(() => {
+                ghostMode = false;
+                ghostModeDisplay.innerText = "Нет";
+            }, 4000);
+        }
+
+        function handleGameOver() {
+            document.getElementById('gameOverSound').play();
+            clearInterval(game);
+            gameOver = true;
+            gameOverMessage.style.display = 'block';
+            document.getElementById('shopButton').style.display = 'block';
+        }
+
+        function collision(head, snake) {
+            return snake.some(segment => head.x === segment.x && head.y === segment.y);
+        }
+
+        function updateHearts() {
+            heartsDisplay.innerText = '❤️'.repeat(lives);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (gameOver) return;
+            if (event.key.startsWith('Arrow')) {
+                event.preventDefault();
+            }
+            if (!canChangeDirection) return;
+            canChangeDirection = false;
+            if (event.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
+            if (event.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
+            if (event.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+            if (event.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
+        });
+
+        setInterval(() => canChangeDirection = true, 100);
+
+        function closeGameOver() {
+            gameOverMessage.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
